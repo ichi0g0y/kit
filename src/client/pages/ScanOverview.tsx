@@ -32,11 +32,19 @@ const tools = [
 	},
 	{
 		name: "suggest_domain",
-		description: "キーワードからドメイン候補を自動生成し空き状況をチェック",
-		api: "GET /scan/api/suggest?keyword=myapp",
+		description:
+			"キーワードからドメイン候補を自動生成し空き状況をチェック。TLD 未指定時は主要 TLD（com, net, org, io, dev, app, me, sh, xyz）で検索。",
+		api: "GET /scan/api/suggest?keyword=myapp&tlds=com,io,dev",
 		placeholder: "キーワード（例: deaddrop）",
-		buildUrl: (v: string) =>
-			`/scan/api/suggest?keyword=${encodeURIComponent(v)}`,
+		extraField: {
+			name: "tlds",
+			placeholder: "TLD（例: com,io,dev,app,me,sh ／空欄で主要TLD全て）",
+		},
+		buildUrl: (v: string, extra?: string) => {
+			const url = `/scan/api/suggest?keyword=${encodeURIComponent(v)}`;
+			const tlds = extra?.trim();
+			return tlds ? `${url}&tlds=${encodeURIComponent(tlds)}` : url;
+		},
 		status: "available" as const,
 	},
 	{
@@ -89,6 +97,7 @@ export function ScanOverview() {
 
 function ToolCard({ tool }: { tool: (typeof tools)[number] }) {
 	const [input, setInput] = useState("");
+	const [extra, setExtra] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [result, setResult] = useState<Record<string, unknown> | null>(null);
 	const [error, setError] = useState("");
@@ -100,7 +109,7 @@ function ToolCard({ tool }: { tool: (typeof tools)[number] }) {
 		setResult(null);
 		setError("");
 		try {
-			const resp = await fetch(tool.buildUrl(val));
+			const resp = await fetch(tool.buildUrl(val, extra));
 			if (!resp.ok) {
 				setError(`HTTP ${resp.status}: ${await resp.text()}`);
 				return;
@@ -111,7 +120,7 @@ function ToolCard({ tool }: { tool: (typeof tools)[number] }) {
 		} finally {
 			setLoading(false);
 		}
-	}, [input, tool]);
+	}, [input, extra, tool]);
 
 	return (
 		<Card>
@@ -137,24 +146,35 @@ function ToolCard({ tool }: { tool: (typeof tools)[number] }) {
 				)}
 
 				{tool.buildUrl && (
-					<Flex gap="2" align="center">
-						<Box flexGrow="1">
-							<TextField.Root
+					<Flex direction="column" gap="2">
+						<Flex gap="2" align="center">
+							<Box flexGrow="1">
+								<TextField.Root
+									size="2"
+									placeholder={tool.placeholder}
+									value={input}
+									onChange={(e) => setInput(e.target.value)}
+									onKeyDown={(e) => e.key === "Enter" && run()}
+								/>
+							</Box>
+							<Button
 								size="2"
-								placeholder={tool.placeholder}
-								value={input}
-								onChange={(e) => setInput(e.target.value)}
+								variant="soft"
+								onClick={run}
+								disabled={loading || !input.trim()}
+							>
+								{loading ? "..." : "実行"}
+							</Button>
+						</Flex>
+						{"extraField" in tool && tool.extraField && (
+							<TextField.Root
+								size="1"
+								placeholder={tool.extraField.placeholder}
+								value={extra}
+								onChange={(e) => setExtra(e.target.value)}
 								onKeyDown={(e) => e.key === "Enter" && run()}
 							/>
-						</Box>
-						<Button
-							size="2"
-							variant="soft"
-							onClick={run}
-							disabled={loading || !input.trim()}
-						>
-							{loading ? "..." : "実行"}
-						</Button>
+						)}
 					</Flex>
 				)}
 
