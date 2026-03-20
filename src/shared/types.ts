@@ -56,3 +56,31 @@ export interface DnsResult {
 	records: DnsRecord[];
 	query_types: DnsRecordType[];
 }
+
+export interface IpScanResult {
+	ip: string;
+	reverse_dns: string | null;
+	network: {
+		cidr: string | null;
+		name: string | null;
+		country: string | null;
+		start_address: string | null;
+		end_address: string | null;
+	} | null;
+	organization: string | null;
+	abuse_contact: string | null;
+	asn: {
+		number: number | null;
+		name: string | null;
+	} | null;
+	geolocation: {
+		country: string | null;
+		country_code: string | null;
+		region: string | null;
+		city: string | null;
+		lat: number | null;
+		lon: number | null;
+		timezone: string | null;
+		isp: string | null;
+	} | null;
+}

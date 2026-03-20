@@ -4,6 +4,7 @@ import { z } from "zod";
 import type { DnsRecordType } from "../../shared/types";
 import { scanDns } from "./tools/scan-dns";
 import { scanDomains } from "./tools/scan-domain";
+import { scanIp } from "./tools/scan-ip";
 import { suggestDomains } from "./tools/suggest-domains";
 
 export const apiApp = new Hono();
@@ -36,6 +37,35 @@ apiApp.get(
 		const { keyword, tlds: tldsStr } = c.req.valid("query");
 		const tlds = tldsStr ? tldsStr.split(",") : undefined;
 		const result = await suggestDomains(keyword, tlds);
+		return c.json(result);
+	},
+);
+
+function getClientIp(c: { req: { header: (name: string) => string | undefined } }): string | null {
+	return (
+		c.req.header("cf-connecting-ip") ||
+		c.req.header("x-real-ip") ||
+		c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ||
+		null
+	);
+}
+
+apiApp.get("/myip", (c) => {
+	const ip = getClientIp(c);
+	return c.json({ ip: ip ?? null });
+});
+
+apiApp.get(
+	"/ip",
+	zValidator(
+		"query",
+		z.object({
+			ip: z.string().min(1),
+		}),
+	),
+	async (c) => {
+		const { ip } = c.req.valid("query");
+		const result = await scanIp(ip);
 		return c.json(result);
 	},
 );

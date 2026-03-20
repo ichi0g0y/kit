@@ -11,7 +11,32 @@ import {
 	Text,
 	TextField,
 } from "@radix-ui/themes";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+
+let cachedGlobalIp: string | null = null;
+
+async function fetchGlobalIp(): Promise<string | null> {
+	if (cachedGlobalIp) return cachedGlobalIp;
+	const sources = [
+		async () => {
+			const r = await fetch("https://1.1.1.1/cdn-cgi/trace");
+			const text = await r.text();
+			return text.match(/ip=(.+)/)?.[1] ?? null;
+		},
+		async () => {
+			const r = await fetch("https://api.ipify.org?format=json");
+			const d = (await r.json()) as { ip: string };
+			return d.ip ?? null;
+		},
+	];
+	for (const src of sources) {
+		try {
+			const ip = await src();
+			if (ip) { cachedGlobalIp = ip; return ip; }
+		} catch { /* try next */ }
+	}
+	return null;
+}
 
 interface DomainResult {
 	domain: string;
@@ -57,11 +82,12 @@ const tools = [
 	},
 	{
 		name: "scan_ip",
-		description: "IP アドレスの情報照会",
-		api: "",
-		placeholder: "",
-		buildUrl: null,
-		status: "coming" as const,
+		description:
+			"IP アドレスの詳細情報（逆引きDNS、ネットワーク、ASN、地理情報、abuse連絡先）",
+		api: "GET /scan/api/ip?ip=8.8.8.8",
+		placeholder: "8.8.8.8 or 2001:4860:4860::8888",
+		buildUrl: (v: string) => `/scan/api/ip?ip=${encodeURIComponent(v)}`,
+		status: "available" as const,
 	},
 	{
 		name: "scan_ssl",
@@ -101,6 +127,14 @@ function ToolCard({ tool }: { tool: (typeof tools)[number] }) {
 	const [loading, setLoading] = useState(false);
 	const [result, setResult] = useState<Record<string, unknown> | null>(null);
 	const [error, setError] = useState("");
+
+	useEffect(() => {
+		if (tool.name === "scan_ip") {
+			fetchGlobalIp().then((ip) => {
+				if (ip) setInput(ip);
+			});
+		}
+	}, [tool.name]);
 
 	const run = useCallback(async () => {
 		const val = input.trim();
@@ -196,6 +230,7 @@ function ResultRenderer({
 }: { name: string; data: Record<string, unknown> }) {
 	if (name === "scan_domain") return <DomainScanResult data={data} />;
 	if (name === "suggest_domain") return <SuggestResult data={data} />;
+	if (name === "scan_ip") return <IpScanResultView data={data} />;
 	return <JsonResult data={data} />;
 }
 
@@ -305,6 +340,82 @@ function RdapDetail({ rdap }: { rdap: Record<string, unknown> }) {
 		<Text size="1" color="gray">
 			{parts.join(" / ")}
 		</Text>
+	);
+}
+
+function IpScanResultView({ data }: { data: Record<string, unknown> }) {
+	const d = data as {
+		ip: string;
+		reverse_dns: string | null;
+		network: {
+			cidr: string | null;
+			name: string | null;
+			country: string | null;
+			start_address: string | null;
+			end_address: string | null;
+		} | null;
+		organization: string | null;
+		abuse_contact: string | null;
+		asn: { number: number | null; name: string | null } | null;
+		geolocation: {
+			country: string | null;
+			country_code: string | null;
+			region: string | null;
+			city: string | null;
+			lat: number | null;
+			lon: number | null;
+			timezone: string | null;
+			isp: string | null;
+		} | null;
+	};
+
+	const rows: [string, string | null][] = [
+		["IP", d.ip],
+		["逆引きDNS", d.reverse_dns],
+		["組織", d.organization],
+		["Abuse連絡先", d.abuse_contact],
+	];
+	if (d.network) {
+		rows.push(
+			["ネットワーク", d.network.cidr],
+			["ネットワーク名", d.network.name],
+			["範囲", d.network.start_address && d.network.end_address
+				? `${d.network.start_address} – ${d.network.end_address}`
+				: null],
+			["国 (RDAP)", d.network.country],
+		);
+	}
+	if (d.asn) {
+		rows.push(
+			["ASN", d.asn.number != null ? `AS${d.asn.number}` : null],
+			["AS名", d.asn.name],
+		);
+	}
+	if (d.geolocation) {
+		const g = d.geolocation;
+		rows.push(
+			["所在地", [g.city, g.region, g.country].filter(Boolean).join(", ") || null],
+			["座標", g.lat != null && g.lon != null ? `${g.lat}, ${g.lon}` : null],
+			["タイムゾーン", g.timezone],
+			["ISP", g.isp],
+		);
+	}
+
+	return (
+		<ScrollArea style={{ maxHeight: 400 }}>
+			<Flex direction="column" gap="1">
+				{rows.map(([label, value]) =>
+					value ? (
+						<Flex key={label} gap="2" align="baseline">
+							<Text size="1" color="gray" style={{ minWidth: 100 }}>
+								{label}
+							</Text>
+							<Code size="1">{value}</Code>
+						</Flex>
+					) : null,
+				)}
+			</Flex>
+		</ScrollArea>
 	);
 }
 

@@ -2,6 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { scanDns } from "./tools/scan-dns";
 import { scanDomains } from "./tools/scan-domain";
+import { scanIp } from "./tools/scan-ip";
 import { suggestDomains } from "./tools/suggest-domains";
 
 export function createMcpServer() {
@@ -42,6 +43,20 @@ export function createMcpServer() {
 		},
 		async ({ keyword, tlds }) => {
 			const result = await suggestDomains(keyword, tlds);
+			return {
+				content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+			};
+		},
+	);
+
+	server.tool(
+		"scan_ip",
+		"IPアドレスの詳細情報を照会する（逆引きDNS、ネットワーク範囲、組織、ASN、地理情報、abuse連絡先）。",
+		{
+			ip: z.string().describe("IPアドレス（IPv4 or IPv6）"),
+		},
+		async ({ ip }) => {
+			const result = await scanIp(ip);
 			return {
 				content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
 			};
