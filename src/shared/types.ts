@@ -11,7 +11,26 @@ export interface DomainCheckResult {
 		raw_status?: string;
 		registration_date?: string;
 		expiry_date?: string;
+		registrar_name?: string;
+		nameservers?: string[];
 	};
+}
+
+export interface DomainScanResult {
+	summary: {
+		total: number;
+		available: number;
+		registered: number;
+		unknown: number;
+	};
+	results: DomainCheckResult[];
+}
+
+export interface DomainSuggestionResult {
+	keyword: string;
+	candidates_checked: number;
+	available: DomainCheckResult[];
+	registered: DomainCheckResult[];
 }
 
 export type DnsRecordType =

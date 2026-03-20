@@ -6,12 +6,14 @@ export interface RdapResponse {
 	registration_date?: string;
 	expiry_date?: string;
 	raw_status?: string;
+	registrar_name?: string;
+	nameservers?: string[];
 }
 
 const RDAP_SERVERS: Record<string, string> = {
 	com: "https://rdap.verisign.com/com/v1",
 	net: "https://rdap.verisign.com/net/v1",
-	org: "https://rdap.org/org/v1",
+	org: "https://rdap.publicinterestregistry.org/rdap",
 	io: "https://rdap.nic.io/v1",
 	dev: "https://rdap.nic.google/v1",
 	app: "https://rdap.nic.google/v1",
@@ -20,25 +22,16 @@ const RDAP_SERVERS: Record<string, string> = {
 	xyz: "https://rdap.nic.xyz/v1",
 };
 
+const FALLBACK_RDAP = "https://rdap.org";
+
 function getTld(domain: string): string {
 	const parts = domain.split(".");
 	return parts[parts.length - 1].toLowerCase();
 }
 
-export function hasRdapServer(domain: string): boolean {
-	return getTld(domain) in RDAP_SERVERS;
-}
-
-export async function queryRdap(domain: string): Promise<RdapResponse> {
-	const tld = getTld(domain);
-	const server = RDAP_SERVERS[tld];
-
-	if (!server) {
-		return { status: "error", http_status: 0, raw_status: "no_rdap_server" };
-	}
-
+async function fetchRdapUrl(url: string): Promise<RdapResponse> {
 	try {
-		const resp = await fetch(`${server}/domain/${encodeURIComponent(domain)}`, {
+		const resp = await fetch(url, {
 			headers: { Accept: "application/rdap+json" },
 		});
 
@@ -73,6 +66,20 @@ export async function queryRdap(domain: string): Promise<RdapResponse> {
 			}
 		}
 
+		const entities = data.entities as
+			| Array<{ roles?: string[]; handle?: string }>
+			| undefined;
+		let registrarName: string | undefined;
+		if (entities) {
+			const registrar = entities.find((e) => e.roles?.includes("registrar"));
+			registrarName = registrar?.handle;
+		}
+
+		const nameserversRaw = data.nameservers as
+			| Array<{ ldhName: string }>
+			| undefined;
+		const nameservers = nameserversRaw?.map((ns) => ns.ldhName.toLowerCase());
+
 		const statusArray = data.status as string[] | undefined;
 
 		return {
@@ -81,8 +88,22 @@ export async function queryRdap(domain: string): Promise<RdapResponse> {
 			registration_date: registrationDate,
 			expiry_date: expiryDate,
 			raw_status: statusArray?.join(", "),
+			registrar_name: registrarName,
+			nameservers,
 		};
 	} catch {
 		return { status: "error", http_status: 0 };
 	}
+}
+
+export async function queryRdap(domain: string): Promise<RdapResponse> {
+	const tld = getTld(domain);
+	const server = RDAP_SERVERS[tld];
+	const encoded = encodeURIComponent(domain);
+
+	if (server) {
+		return fetchRdapUrl(`${server}/domain/${encoded}`);
+	}
+
+	return fetchRdapUrl(`${FALLBACK_RDAP}/domain/${encoded}`);
 }

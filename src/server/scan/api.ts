@@ -3,7 +3,8 @@ import { Hono } from "hono";
 import { z } from "zod";
 import type { DnsRecordType } from "../../shared/types";
 import { scanDns } from "./tools/scan-dns";
-import { scanDomain } from "./tools/scan-domain";
+import { scanDomains } from "./tools/scan-domain";
+import { suggestDomains } from "./tools/suggest-domains";
 
 export const apiApp = new Hono();
 
@@ -17,7 +18,24 @@ apiApp.get(
 	),
 	async (c) => {
 		const { domain } = c.req.valid("query");
-		const result = await scanDomain(domain);
+		const result = await scanDomains(domain);
+		return c.json(result);
+	},
+);
+
+apiApp.get(
+	"/suggest",
+	zValidator(
+		"query",
+		z.object({
+			keyword: z.string().min(1),
+			tlds: z.string().optional(),
+		}),
+	),
+	async (c) => {
+		const { keyword, tlds: tldsStr } = c.req.valid("query");
+		const tlds = tldsStr ? tldsStr.split(",") : undefined;
+		const result = await suggestDomains(keyword, tlds);
 		return c.json(result);
 	},
 );

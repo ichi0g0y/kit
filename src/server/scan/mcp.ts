@@ -1,20 +1,45 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { scanDns } from "./tools/scan-dns";
-import { scanDomain } from "./tools/scan-domain";
+import { scanDomains } from "./tools/scan-domain";
+import { suggestDomains } from "./tools/suggest-domains";
 
 export function createMcpServer() {
 	const server = new McpServer({
 		name: "kit-scan",
-		version: "0.1.0",
+		version: "0.3.0",
 	});
 
 	server.tool(
 		"scan_domain",
-		"ドメイン名の利用可否をチェックする。RDAPベースで精度重視の判定を行う。",
-		{ domain: z.string().describe("ドメイン名（例: example.com）") },
+		"ドメイン名の利用可否をチェックする。スペースまたはカンマ区切りで複数指定可（最大50件）。",
+		{
+			domain: z
+				.string()
+				.describe(
+					"ドメイン名（例: example.com）。複数はスペースかカンマ区切り",
+				),
+		},
 		async ({ domain }) => {
-			const result = await scanDomain(domain);
+			const result = await scanDomains(domain);
+			return {
+				content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+			};
+		},
+	);
+
+	server.tool(
+		"suggest_domains",
+		"キーワードからドメイン名候補を自動生成し、利用可否をチェックする。",
+		{
+			keyword: z.string().describe("ドメイン名のベースとなるキーワード"),
+			tlds: z
+				.array(z.string())
+				.optional()
+				.describe("チェック対象のTLD（デフォルト: com, net, org, io, dev）"),
+		},
+		async ({ keyword, tlds }) => {
+			const result = await suggestDomains(keyword, tlds);
 			return {
 				content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
 			};
