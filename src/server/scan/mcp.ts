@@ -29,14 +29,16 @@ export function createMcpServer() {
 	);
 
 	server.tool(
-		"suggest_domains",
+		"suggest_domain",
 		"キーワードからドメイン名候補を自動生成し、利用可否をチェックする。",
 		{
 			keyword: z.string().describe("ドメイン名のベースとなるキーワード"),
 			tlds: z
 				.array(z.string())
 				.optional()
-				.describe("チェック対象のTLD（デフォルト: com, net, org, io, dev）"),
+				.describe(
+					"チェック対象のTLD（デフォルト: com, net, org, io, dev, app, me, sh, xyz）",
+				),
 		},
 		async ({ keyword, tlds }) => {
 			const result = await suggestDomains(keyword, tlds);

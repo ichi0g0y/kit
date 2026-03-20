@@ -31,7 +31,7 @@ const tools = [
 		status: "available" as const,
 	},
 	{
-		name: "suggest_domains",
+		name: "suggest_domain",
 		description: "キーワードからドメイン候補を自動生成し空き状況をチェック",
 		api: "GET /scan/api/suggest?keyword=myapp",
 		placeholder: "キーワード（例: deaddrop）",
@@ -175,7 +175,7 @@ function ResultRenderer({
 	data,
 }: { name: string; data: Record<string, unknown> }) {
 	if (name === "scan_domain") return <DomainScanResult data={data} />;
-	if (name === "suggest_domains") return <SuggestResult data={data} />;
+	if (name === "suggest_domain") return <SuggestResult data={data} />;
 	return <JsonResult data={data} />;
 }
 

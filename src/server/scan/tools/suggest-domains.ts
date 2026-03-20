@@ -5,7 +5,17 @@ import type {
 import { Semaphore } from "../../core/semaphore";
 import { scanDomainOne } from "./scan-domain";
 
-const DEFAULT_TLDS = ["com", "net", "org", "io", "dev"];
+const DEFAULT_TLDS = [
+	"com",
+	"net",
+	"org",
+	"io",
+	"dev",
+	"app",
+	"me",
+	"sh",
+	"xyz",
+];
 const PREFIXES = ["get", "my", "try", "go", "the"];
 const SUFFIXES = ["app", "hq", "hub", "lab", "dev"];
 const MAX_CANDIDATES = 50;
