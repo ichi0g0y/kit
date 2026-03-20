@@ -15,7 +15,7 @@ tasks:
   dev:worker:
     desc: Wrangler 開発サーバー起動
     cmds:
-      - npx wrangler dev
+      - npx wrangler dev --live-reload
 
   build:
     desc: プロダクションビルド

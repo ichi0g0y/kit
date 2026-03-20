@@ -34,11 +34,7 @@ export function Landing() {
 
 			<Grid columns={{ initial: "1", sm: "2", md: "3" }} gap="4">
 				{categories.map((cat) => (
-					<Link
-						key={cat.name}
-						to={cat.path}
-						style={{ textDecoration: "none" }}
-					>
+					<Link key={cat.name} to={cat.path} style={{ textDecoration: "none" }}>
 						<Card
 							className={
 								cat.status === "coming"
@@ -71,7 +67,8 @@ export function Landing() {
 				</Heading>
 				<Flex direction="column" gap="2">
 					<Text size="2" color="gray">
-						MCP: 各カテゴリの <code>/mcp</code> エンドポイントをMCPクライアントに登録
+						MCP: 各カテゴリの <code>/mcp</code>{" "}
+						エンドポイントをMCPクライアントに登録
 					</Text>
 					<Text size="2" color="gray">
 						API: 各カテゴリの <code>/api</code> 配下のRESTエンドポイントを利用
