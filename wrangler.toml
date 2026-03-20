@@ -2,6 +2,10 @@ name = "kit"
 main = "src/server/index.ts"
 compatibility_date = "2025-12-01"
 
+routes = [
+  { pattern = "kit.ich.sh", custom_domain = true },
+]
+
 [assets]
 directory = "dist/client"
 binding = "ASSETS"

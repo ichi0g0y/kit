@@ -11,6 +11,7 @@ import {
 	Text,
 	TextField,
 } from "@radix-ui/themes";
+import { CopyCheckIcon, CopyIcon } from "lolicon";
 import { useCallback, useEffect, useState } from "react";
 
 let cachedGlobalIp: string | null = null;
@@ -421,19 +422,104 @@ function JsonResult({ data }: { data: Record<string, unknown> }) {
 	);
 }
 
+function CopyButton({ text }: { text: string }) {
+	const [copied, setCopied] = useState(false);
+	const copy = useCallback(() => {
+		navigator.clipboard.writeText(text).then(() => {
+			setCopied(true);
+			setTimeout(() => setCopied(false), 2000);
+		});
+	}, [text]);
+	return (
+		<Button size="1" variant="ghost" onClick={copy} style={{ cursor: "pointer" }}>
+			{copied ? <CopyCheckIcon size={14} /> : <CopyIcon size={14} />}
+		</Button>
+	);
+}
+
+const mcpExamples = [
+	{
+		name: "Claude Code",
+		command:
+			"claude mcp add scan-kit --transport http https://kit.ich.sh/scan/mcp",
+	},
+	{
+		name: "Claude Desktop",
+		config: `{
+  "mcpServers": {
+    "scan-kit": {
+      "command": "npx",
+      "args": ["mcp-remote", "https://kit.ich.sh/scan/mcp"]
+    }
+  }
+}`,
+		note: "claude_desktop_config.json に追加",
+	},
+	{
+		name: "Cursor",
+		config: `{
+  "mcpServers": {
+    "scan-kit": {
+      "url": "https://kit.ich.sh/scan/mcp"
+    }
+  }
+}`,
+		note: "Cursor Settings → MCP → Add Server、または .cursor/mcp.json に追加",
+	},
+	{
+		name: "Codex",
+		command:
+			"CODEX_MCP_SERVERS='[{\"name\":\"scan-kit\",\"url\":\"https://kit.ich.sh/scan/mcp\"}]' codex",
+	},
+];
+
 function ConnectionInfo() {
 	return (
 		<Card>
 			<Heading size="3" mb="2">
 				接続情報
 			</Heading>
-			<Flex direction="column" gap="1">
-				<Text size="2">
-					MCP: <Code>https://kit.ich.sh/scan/mcp</Code>
-				</Text>
-				<Text size="2">
-					REST: <Code>https://kit.ich.sh/scan/api/</Code>
-				</Text>
+			<Flex direction="column" gap="1" mb="4">
+				<Flex align="center" gap="1">
+					<Text size="2">
+						MCP: <Code>https://kit.ich.sh/scan/mcp</Code>
+					</Text>
+					<CopyButton text="https://kit.ich.sh/scan/mcp" />
+				</Flex>
+				<Flex align="center" gap="1">
+					<Text size="2">
+						REST: <Code>https://kit.ich.sh/scan/api/</Code>
+					</Text>
+					<CopyButton text="https://kit.ich.sh/scan/api/" />
+				</Flex>
+			</Flex>
+
+			<Heading size="2" mb="2">
+				MCP 登録例
+			</Heading>
+			<Flex direction="column" gap="3">
+				{mcpExamples.map((ex) => (
+					<Flex key={ex.name} direction="column" gap="1">
+						<Text size="2" weight="bold">
+							{ex.name}
+						</Text>
+						{"note" in ex && ex.note && (
+							<Text size="1" color="gray">
+								{ex.note}
+							</Text>
+						)}
+						<Flex align="start" gap="1">
+							<ScrollArea style={{ flex: 1 }}>
+								<Code size="1">
+									<pre style={{ margin: 0 }}>
+										{"command" in ex ? ex.command : ex.config}
+									</pre>
+								</Code>
+							</ScrollArea>
+							<CopyButton text={"command" in ex ? ex.command : ex.config ?? ""} />
+						</Flex>
+					</Flex>
+				))}
 			</Flex>
 		</Card>
 	);

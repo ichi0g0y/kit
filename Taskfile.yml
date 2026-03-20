@@ -15,6 +15,7 @@ tasks:
   dev:worker:
     desc: Wrangler 開発サーバー起動
     cmds:
+      - mkdir -p dist/client
       - bunx wrangler dev --live-reload
 
   build:
