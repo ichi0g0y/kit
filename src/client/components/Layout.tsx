@@ -1,5 +1,5 @@
 import { Box, Container, Flex, Link, Text } from "@radix-ui/themes";
-import { Link as RouterLink, Outlet } from "react-router";
+import { Outlet, Link as RouterLink } from "react-router";
 
 export function Layout() {
 	return (

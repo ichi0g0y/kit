@@ -1,6 +1,7 @@
 import type { DnsRecord, DnsRecordType } from "../../shared/types";
 
 const DOH_URL = "https://cloudflare-dns.com/dns-query";
+const PTR_TYPE = 12;
 
 interface DohAnswer {
 	name: string;
@@ -33,6 +34,44 @@ const REVERSE_TYPE_MAP: Record<DnsRecordType, string> = {
 	CNAME: "CNAME",
 	SOA: "SOA",
 };
+
+function buildPtrName(ip: string): string {
+	if (ip.includes(":")) {
+		// IPv6: expand to full form, reverse nibbles
+		const parts = ip.split(":");
+		const full: string[] = [];
+		for (const p of parts) {
+			if (p === "") {
+				const missing = 8 - parts.filter((x) => x !== "").length;
+				for (let i = 0; i < missing + 1; i++) full.push("0000");
+			} else {
+				full.push(p.padStart(4, "0"));
+			}
+		}
+		const nibbles = full.join("").split("").reverse().join(".");
+		return `${nibbles}.ip6.arpa`;
+	}
+	// IPv4
+	return `${ip.split(".").reverse().join(".")}.in-addr.arpa`;
+}
+
+export async function queryPtr(ip: string): Promise<string | null> {
+	try {
+		const name = buildPtrName(ip);
+		const url = `${DOH_URL}?name=${encodeURIComponent(name)}&type=${PTR_TYPE}`;
+		const resp = await fetch(url, {
+			headers: { Accept: "application/dns-json" },
+		});
+		if (!resp.ok) return null;
+		const data = (await resp.json()) as DohResponse;
+		const answer = data.Answer?.find((a) => a.type === PTR_TYPE);
+		if (!answer) return null;
+		// strip trailing dot
+		return answer.data.replace(/\.$/, "");
+	} catch {
+		return null;
+	}
+}
 
 export async function queryDoh(
 	domain: string,

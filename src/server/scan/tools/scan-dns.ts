@@ -1,5 +1,5 @@
-import { queryDoh } from "../../core/dns";
 import type { DnsRecordType, DnsResult } from "../../../shared/types";
+import { queryDoh } from "../../core/dns";
 
 const DEFAULT_TYPES: DnsRecordType[] = ["A", "AAAA", "MX"];
 
