@@ -1,0 +1,35 @@
+version: "3"
+
+tasks:
+  dev:
+    desc: ローカル開発サーバー起動（クライアント自動ビルド + Worker）
+    deps:
+      - dev:client
+      - dev:worker
+
+  dev:client:
+    desc: Vite でクライアントをウォッチビルド
+    cmds:
+      - npx vite build --watch
+
+  dev:worker:
+    desc: Wrangler 開発サーバー起動
+    cmds:
+      - npx wrangler dev
+
+  build:
+    desc: プロダクションビルド
+    cmds:
+      - npx vite build
+      - npx wrangler deploy --dry-run
+
+  check:
+    desc: 型チェック + lint
+    cmds:
+      - npx tsc --noEmit
+      - npx biome check .
+
+  format:
+    desc: コード整形
+    cmds:
+      - npx biome format --write .

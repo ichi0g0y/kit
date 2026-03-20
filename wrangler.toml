@@ -1,0 +1,8 @@
+name = "kit"
+main = "src/server/index.ts"
+compatibility_date = "2025-12-01"
+
+assets = { directory = "dist/client" }
+
+[observability]
+enabled = true
