@@ -5,6 +5,7 @@ import type {
 import { queryDoh } from "../../core/dns";
 import { queryRdap } from "../../core/rdap";
 import { Semaphore } from "../../core/semaphore";
+import { queryWhois } from "../../core/whois";
 
 const MAX_DOMAINS = 50;
 const CONCURRENCY = 5;
@@ -82,17 +83,53 @@ export async function scanDomainOne(
 }
 
 async function fallbackDnsCheck(domain: string): Promise<DomainCheckResult> {
-	const records = await queryDoh(domain, "A");
+	// A → NS → SOA の順に問い合わせ、どれかヒットすれば登録済みと判定
+	for (const type of ["A", "NS", "SOA"] as const) {
+		const records = await queryDoh(domain, type);
+		if (records.length > 0) {
+			return {
+				domain,
+				status: "registered",
+				confidence: type === "A" ? "medium" : "low",
+				method: "dns_fallback",
+				dns_record_type: type,
+			};
+		}
+	}
 
-	if (records.length > 0) {
+	// DNS でも判定できない場合は WHOIS API にフォールバック
+	return fallbackWhoisCheck(domain);
+}
+
+async function fallbackWhoisCheck(domain: string): Promise<DomainCheckResult> {
+	const whois = await queryWhois(domain);
+
+	if (whois.status === "found") {
 		return {
 			domain,
 			status: "registered",
 			confidence: "medium",
 			method: "dns_fallback",
+			dns_record_type: "whois",
+			rdap: {
+				registrar_name: whois.registrar,
+				registration_date: whois.creation_date,
+				expiry_date: whois.expiry_date,
+			},
 		};
 	}
 
+	if (whois.status === "not_found") {
+		return {
+			domain,
+			status: "available",
+			confidence: "medium",
+			method: "dns_fallback",
+			dns_record_type: "whois",
+		};
+	}
+
+	// WHOIS API もエラーの場合のみ unknown
 	return {
 		domain,
 		status: "unknown",

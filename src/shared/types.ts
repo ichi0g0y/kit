@@ -7,6 +7,7 @@ export interface DomainCheckResult {
 	status: DomainStatus;
 	confidence: Confidence;
 	method: CheckMethod;
+	dns_record_type?: string;
 	rdap?: {
 		raw_status?: string;
 		registration_date?: string;
