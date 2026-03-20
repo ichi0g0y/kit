@@ -89,14 +89,6 @@ const tools = [
 		buildUrl: (v: string) => `/scan/api/ip?ip=${encodeURIComponent(v)}`,
 		status: "available" as const,
 	},
-	{
-		name: "scan_ssl",
-		description: "SSL 証明書の確認",
-		api: "",
-		placeholder: "",
-		buildUrl: null,
-		status: "coming" as const,
-	},
 ];
 
 export function ScanOverview() {
