@@ -10,26 +10,26 @@ tasks:
   dev:client:
     desc: Vite でクライアントをウォッチビルド
     cmds:
-      - npx vite build --watch
+      - bunx vite build --watch
 
   dev:worker:
     desc: Wrangler 開発サーバー起動
     cmds:
-      - npx wrangler dev --live-reload
+      - bunx wrangler dev --live-reload
 
   build:
     desc: プロダクションビルド
     cmds:
-      - npx vite build
-      - npx wrangler deploy --dry-run
+      - bunx vite build
+      - bunx wrangler deploy --dry-run
 
   check:
     desc: 型チェック + lint
     cmds:
-      - npx tsc --noEmit
-      - npx biome check .
+      - bunx tsc --noEmit
+      - bunx biome check .
 
   format:
     desc: コード整形
     cmds:
-      - npx biome format --write .
+      - bunx biome format --write .
