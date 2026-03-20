@@ -448,10 +448,12 @@ const mcpExamples = [
 		config: `{
   "mcpServers": {
     "scan-kit": {
-      "url": "https://kit.ich.sh/scan/mcp"
+      "command": "npx",
+      "args": ["mcp-remote", "https://kit.ich.sh/scan/mcp"]
     }
   }
 }`,
+		note: "claude_desktop_config.json に追加",
 	},
 	{
 		name: "Cursor",
