@@ -8,13 +8,13 @@ type Env = { Bindings: { ASSETS: { fetch: typeof fetch } } };
 const app = new Hono<Env>();
 
 app.use("/scan/api/*", cors());
-app.use("/scan/mcp/*", cors());
+app.use("/scan/mcp", cors());
 
 app.route("/scan/api", apiApp);
 app.post("/scan/mcp", mcpHandler);
 app.all("/scan/mcp", (c) => {
 	console.log(`[guard] /scan/mcp rejected: method=${c.req.method}`);
-	return c.text("Method Not Allowed", 405);
+	return c.text("Not Found", 404);
 });
 
 app.get("/api/health", (c) =>
