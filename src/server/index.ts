@@ -11,7 +11,7 @@ app.use("/scan/api/*", cors());
 app.use("/scan/mcp/*", cors());
 
 app.route("/scan/api", apiApp);
-app.all("/scan/mcp", mcpHandler);
+app.post("/scan/mcp", mcpHandler);
 
 app.get("/api/health", (c) =>
 	c.json({ name: "kit", version: "0.1.0", status: "ok" }),
