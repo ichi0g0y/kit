@@ -12,11 +12,20 @@ app.use("/scan/mcp/*", cors());
 
 app.route("/scan/api", apiApp);
 app.post("/scan/mcp", mcpHandler);
+app.all("/scan/mcp", (c) => {
+	console.log(`[guard] /scan/mcp rejected: method=${c.req.method}`);
+	return c.text("Method Not Allowed", 405);
+});
 
 app.get("/api/health", (c) =>
 	c.json({ name: "kit", version: "0.1.0", status: "ok" }),
 );
 
-app.all("*", (c) => c.env.ASSETS.fetch(c.req.raw));
+app.all("*", (c) => {
+	if (!c.env.ASSETS) {
+		return c.text("ASSETS binding not available", 500);
+	}
+	return c.env.ASSETS.fetch(c.req.raw);
+});
 
 export default app;
